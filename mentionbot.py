@@ -82,5 +82,5 @@ mysqlempty()
 mysqlpopulate()
 while True:
     run_bot()
-    print("    Sleeping for 1000 seconds...")
+    print("    Sleeping for %s seconds..." % time_sleep)
     time.sleep(time_sleep)
