@@ -2,7 +2,7 @@
 # in the same directory as mentionbot.py
 # Mentionbot uses MySQL to store posts. Make sure you assign it
 # to an existing table with relevant privileges.
-keywords = keyword11111111, keyword2, keyword3     #keywords. Split with commas
+keywords = keyword1, keyword2, keyword3     #keywords. Split with commas
 dbhost = localhost                                #if or hostname for mysql server
 dbuser = username                                    # mysql username
 dbpass = password                                 # mysql password
