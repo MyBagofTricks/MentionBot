@@ -1,6 +1,6 @@
 """ To do:
-1. Add side car file to handle variables.
-2. Add option to swap between text file and sql   """
+- Add optional plain text file support instead of MySQL
+- Add option to send an account a notification via reddit message."""
 import praw, time, MySQLdb
 from datetime import datetime
 from sys import argv
