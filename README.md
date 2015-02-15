@@ -1,5 +1,5 @@
 # MentionBot
-This is a really basic bot for searching a Reddit for keywords
+This is a really basic bot for searching Reddit for keywords. You can search by subreddit name (eg. 'news') or 'all'.
 
 # Requirements
  - python 2.7+
