@@ -1,4 +1,4 @@
-""" To do:
+"""  To do:
 - Add optional plain text file support instead of MySQL
 - Add option to send an account a notification via reddit message."""
 import praw, time, MySQLdb
