@@ -21,10 +21,6 @@ user_agent = config['user_agent']
 time_sleep = int(config['time_sleep'])
 stars = "**********************************************************************\n"
 
-"""def reddit_login():
-    r.login(redlogin,redpass)
-    print("[*] Logged in as %s." % redlogin)
-"""
 def mysqlempty():
     clear = raw_input('    Clear the database? [y/n]?: ')
     if clear in ('y','Y','yes','YES'):
