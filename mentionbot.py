@@ -6,7 +6,6 @@ from datetime import datetime
 from sys import argv
 from configobj import ConfigObj
 config = ConfigObj('mentionbot.setup')
-
 subid_array = []
 keywords = config['keywords']
 dbhost = config['dbhost']
@@ -77,6 +76,9 @@ r.login(redlogin,redpass)
 mysqlempty()
 mysqlpopulate()
 while True:
-    run_bot()
+    try:
+        run_bot()
+    except Exception, e:
+        print "[-] Error = "+str(e)
     print("    Sleeping for %s seconds..." % time_sleep)
     time.sleep(time_sleep)
