@@ -1,8 +1,9 @@
 """  To do:
 - Add optional plain text file support instead of MySQL
 - Add option to send an account a notification via reddit message."""
-import praw, time, MySQLdb
-from datetime import datetime
+import praw 
+import MySQLdb
+from time import sleep, localtime, strftime
 from sys import argv
 from configobj import ConfigObj
 config = ConfigObj('mentionbot.setup')
@@ -18,16 +19,15 @@ redpass = config['redpass']
 subname = config['subname']
 user_agent = config['user_agent']
 time_sleep = int(config['time_sleep'])
-stars = "**********************************************************************\n"
 
 def mysqlempty():
     clear = raw_input('[-] Clear the database? [y/n]?: ')
     if clear in ('y','Y','yes','YES'):
         try:
-            print "[*] Clearing database..."
-            db = MySQLdb.connect(dbhost,dbuser,dbpass,dbname,charset='utf8')
+            db = MySQLdb.connect(dbhost,dbuser,dbpass,dbname,\
+                charset='utf8')
             cursor = db.cursor()
-            cursor.execute("DELETE FROM %s" % dbtable)
+            cursor.execute("DELETE FROM %s"%dbtable)
             db.commit()
             db.close()
         except Exception, e:
@@ -37,44 +37,49 @@ def mysqlempty():
 
 def mysqlpopulate():
     try:
-        print(stars+"[-] Populating existing thread(s) from %s: %s..." % (dbname,dbtable))
-        db = MySQLdb.connect(dbhost,dbuser,dbpass,dbname,charset='utf8')
+        print('*'*72+"\n[-] Populating existing thread(s) from %s: %s"\
+            %(dbname,dbtable))
+        db = MySQLdb.connect(dbhost,dbuser,dbpass,dbname,\
+            charset='utf8')
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM %s" % dbtable)
+        cursor.execute("SELECT * FROM %s"%dbtable)
         results = cursor.fetchall()
         for row in results:
             subid = row[0]
             subid_array.append(subid)
         db.close()
-        print(stars+"[+] %s database loaded. %s post(s) already populated.") \
-            % (dbname,len(subid_array))
+        print('*'*72+"\n[+] %s database loaded. %s post(s) already "\
+            +"populated.")%(dbname,len(subid_array))
     except Exception, e:
         print "[x] Error = "+str(e)
  
 def run_bot():
-    now = str(datetime.now())
-    print "[-] Scanning /r/%s for keyword(s) %s" % (subname,now)
+    print "[-] Scanning /r/%s for keyword(s) "+\
+        strftime("%a, %d %b %Y %H:%M:%S", localtime())
     subreddit = r.get_subreddit(subname)
     for sub in subreddit.get_new(limit=100):
         title_text = sub.selftext.title()
         has_keyword = any(string in title_text for string in keywords)
         if sub.id not in subid_array and has_keyword:
-            print "[+] POST ADDED! Link: %s | %s..." % \
-            (sub.short_link,sub.title[0:30])
+            print "[+] POST ADDED! | %s | %s..." % \
+                (sub.short_link,sub.title[0:27])
             subid_array.append(sub.id)
-            db = MySQLdb.connect(dbhost,dbuser,dbpass,dbname,charset='utf8')
+            db = MySQLdb.connect(dbhost,dbuser,dbpass,dbname,\
+                charset='utf8')
             cursor = db.cursor()
             cursor.execute("INSERT INTO %s(subid, title, link) VALUES\
-            (%%s,%%s,%%s)" % dbtable,(sub.id, sub.title, sub.short_link))
+                (%%s,%%s,%%s)"%dbtable,(sub.id,sub.title,\
+                sub.short_link))
             db.commit()
             db.close()
 
 # Program Begins 
-print (stars+"""
-*    Welcome to MentionBot0.2. I scan reddit for keywords and save them 
-*    to a database.
+print ('*'*72+"""
 
-"""+stars)
+*    Welcome to MentionBot0.3. I scan reddit for keywords and save 
+*    them to a database.
+
+"""+'*'*72+"\n")
 r = praw.Reddit(user_agent)
 r.login(redlogin,redpass)
 mysqlempty()
@@ -84,4 +89,4 @@ while True:
         run_bot()
     except Exception, e:
         print "[x] Error = "+str(e)
-    time.sleep(time_sleep)
+    sleep(time_sleep)
