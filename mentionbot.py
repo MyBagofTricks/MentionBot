@@ -37,8 +37,8 @@ def mysqlempty():
 
 def mysqlpopulate():
     try:
-        print('*'*72+"\n[-] Populating existing thread(s) from %s: %s"\
-            %(dbname,dbtable))
+        print('*'*72+"\n[-] Populating existing thread(s) "+
+            "from %s >> %s"%(dbname,dbtable))
         db = MySQLdb.connect(dbhost,dbuser,dbpass,dbname,\
             charset='utf8')
         cursor = db.cursor()
@@ -54,8 +54,8 @@ def mysqlpopulate():
         print "[x] Error = "+str(e)
  
 def run_bot():
-    print "[-] Scanning /r/%s for keyword(s) "+\
-        strftime("%a, %d %b %Y %H:%M:%S", localtime())
+    print "[-] "+strftime("%a, %y-%m-%d %H:%M:%S %Z ",localtime())+\
+        "Scanning /r/%s for keyword(s)"%subname
     subreddit = r.get_subreddit(subname)
     for sub in subreddit.get_new(limit=100):
         title_text = sub.selftext.title()
