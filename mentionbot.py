@@ -1,27 +1,25 @@
 #!/usr/bin/python
 
-
 """
 ################################
-          Mentionbot
-###############################
+          Mentionbot           #
+################################
 
 This is Mentionbot, a simple script which scans reddit.com for
 keywords and stores them in a database.
 
 LICENSED UNDER GPL. See LICENSE for details. 
-
-
 """
 
 import praw 
 import MySQLdb
 from time import sleep, localtime, strftime
 from sys import argv
+from urllib2 import HTTPError
 from configobj import ConfigObj
-config = ConfigObj('mentionbot.setup')
 subid_array = []
 usesql = True
+config = ConfigObj('mentionbot.setup')
 keywords = config['keywords']
 dbhost = config['dbhost']
 dbuser = config['dbuser']
@@ -34,16 +32,15 @@ subname = config['subname']
 user_agent = config['user_agent']
 time_sleep = int(config['time_sleep'])
 
-class MySQL:
+class MySQL(object):
 
     def addpost(self, id, title, link):
-        print "[+] POST ADDED! | %s | %s..." % (link, title[0:27])
-        subid_array.append(id)
+        print "[+] POST ADDED! | {} | {}...".format(link, title[0:27])
         db = MySQLdb.connect(dbhost, dbuser, dbpass, dbname, charset='utf8')
         cursor = db.cursor()
         cursor.execute(
-            "INSERT INTO %s(subid, title, link) VALUES(%%s, %%s, %%s)"
-            % dbtable, (id, title, link))
+            'INSERT INTO post_table(subid, title, link) VALUES(%s, %s, %s)',
+            (id, title, link,))
         db.commit()
         db.close()
 
@@ -51,23 +48,20 @@ class MySQL:
     def empty():
         clear = raw_input('[-] Clear the database? [y/n]?: ')
         if clear in ('y', 'Y', 'yes', 'YES'):
-            try:
-                db = MySQLdb.connect(
+            db = MySQLdb.connect(
                     dbhost, dbuser, dbpass, dbname, charset='utf8')
-                cursor = db.cursor()
-                cursor.execute("DELETE FROM %s" % dbtable)
-                db.commit()
-                db.close()
-            except Exception, e:
-                print "[x] Error = " + str(e)
+            cursor = db.cursor()
+            cursor.execute("DELETE FROM {}".format(dbtable))
+            db.commit()
+            db.close()
         else:
              print "[-] Not clearing database"
 
     @staticmethod 
     def populate():
         try:
-            print('*' * 72 +"\n[-] Populating existing thread(s) from %s >> %s"
-                    % (dbname, dbtable))
+            print('*'*72+"\n[-] Populating existing threads from {} >> {}"
+                    .format(dbname, dbtable))
             db = MySQLdb.connect(dbhost, dbuser, dbpass, dbname, charset='utf8')
             cursor = db.cursor()
             cursor.execute("SELECT * FROM %s" % dbtable)
@@ -76,13 +70,16 @@ class MySQL:
                 subid = row[0]
                 subid_array.append(subid)
             db.close()
-            print('*'*72+"\n[+] %s database loaded. %s post(s) already "
-                    + "populated.") % (dbname, len(subid_array))
+            print('*'*72+"\n[+] {} database loaded. {} post(s) already "
+                    + "populated.\n"+'*'*72).format(dbname, len(subid_array))
         except Exception, e:
-             print "[x] Error = " + str(e)
+             print "[x] Error = "+str(e)
 
 
-class Text:
+class Text(object):
+
+    def addpost(self, id, title, link):
+        print "[+] POST ADDED! | {} | {}...".format(link, title[0:27])
 
     @staticmethod
     def empty():
@@ -104,16 +101,23 @@ def initialize_db():
 
 def run_bot():
     print ("[-] " + strftime("%a, %y-%m-%d %H:%M:%S %Z ", localtime())
-            + "Scanning /r/%s for keyword(s)" % subname)
-    subreddit = r.get_subreddit(subname)
+            + "Scanning /r/{} for keyword(s)".format(subname))
+    try:
+        subreddit = r.get_subreddit(subname)
+    except HTTPError, e:
+        return "[x] Error " + str(e)
     for sub in subreddit.get_new(limit=100):
         title_text = sub.selftext.title()
         has_keyword = any(string in title_text for string in keywords)
         if sub.id not in subid_array and has_keyword and usesql is True:
+            subid_array.append(sub.id)
             post = MySQL()
-            post.addpost(sub.id,sub.title,sub.short_link)
+            post.addpost(sub.id, sub.title, sub.short_link)
         elif sub.id not in subid_array and has_keyword and usesql is False:
-            print "This message shouldn't get triggered..."
+            subid_array.append(sub.id)
+            post = Text()
+            post.addpost(sub.id, sub.title, sub.short_link)
+            print "This message shouldn't get triggered...well maybe"
         else:
             pass
 
@@ -129,8 +133,5 @@ r.login(redlogin, redpass)
 initialize_db()
 
 while True:
-    try:
-        run_bot()
-    except Exception, e:
-        print "[x] Error = " + str(e)
+    run_bot()
     sleep(time_sleep)
