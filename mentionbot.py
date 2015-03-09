@@ -1,15 +1,14 @@
 #!/usr/bin/python
 
-"""
-################################
-          Mentionbot           #
-################################
+########################################################################
+#                              Mentionbot                              #
+########################################################################
 
-This is Mentionbot, a simple script which scans reddit.com for
-keywords and stores them in a database.
+# This is Mentionbot, a simple script which scans reddit.com for
+# keywords and stores them in a database.
+# 
+# LICENSED UNDER GPL. See LICENSE for details. 
 
-LICENSED UNDER GPL. See LICENSE for details. 
-"""
 
 import praw 
 import MySQLdb
@@ -39,8 +38,8 @@ class MySQL(object):
         db = MySQLdb.connect(dbhost, dbuser, dbpass, dbname, charset='utf8')
         cursor = db.cursor()
         cursor.execute(
-            'INSERT INTO post_table(subid, title, link) VALUES(%s, %s, %s)',
-            (id, title, link,))
+            'INSERT INTO %s (subid, title, link) VALUES(%%s, %%s, %%s)' %
+            dbtable, (id, title, link,))
         db.commit()
         db.close()
 
@@ -64,7 +63,7 @@ class MySQL(object):
                     .format(dbname, dbtable))
             db = MySQLdb.connect(dbhost, dbuser, dbpass, dbname, charset='utf8')
             cursor = db.cursor()
-            cursor.execute("SELECT * FROM %s" % dbtable)
+            cursor.execute("SELECT * FROM {}".format(dbtable))
             results = cursor.fetchall()
             for row in results:
                 subid = row[0]
@@ -122,10 +121,10 @@ def run_bot():
             pass
 
 print ('*'*72+"""
-
+*
 *    Welcome to MentionBot0.3. I scan reddit for keywords and save 
 *    them to a database.
-
+*
 """+'*'*72+"\n")
 
 r = praw.Reddit(user_agent)
