@@ -4,7 +4,7 @@ This is a really basic bot for searching Reddit for keywords. You can search by 
 # Requirements
  - python 2.7
  - pymysql - For interacting with the database: https://github.com/PyMySQL/PyMySQL/
- - PRAW - Reddit API Handler. Install here: here: https://praw.readthedocs.org/en/v2.1.20/
+ - PRAW - Reddit API Wrapper. Install here: here: https://praw.readthedocs.org/en/v2.1.20/
  - ConfigObj - This handles setup. Install here: http://www.voidspace.org.uk/python/configobj.html
  - MySQL or compatible database to store records.
 
