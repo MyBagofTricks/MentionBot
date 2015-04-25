@@ -2,14 +2,15 @@
 # in the same directory as mentionbot.py
 # Mentionbot uses MySQL to store posts. Make sure you assign it
 # to an existing table with relevant privileges.
-keywords = keyword1, keyword2, keyword3     #keywords. Split with commas
-dbhost = localhost                                #if or hostname for mysql server
-dbuser = username                                    # mysql username
-dbpass = password                                 # mysql password
-dbname = mentionbot                               # database name
-dbtable = post_table                              # database table name
-redlogin = reddituser                              # reddit username
-redpass = redditpass                               # reddit password
-subname = subreddit                          # subreddit name
-time_sleep = 1000                                 # time to wait between scans
-user_agent = Mentionbot 0.2 - Scans subs for keywords. msg uwotm8bot if needed
+
+keywords = keywords, go, here                  #keywords. Split with commas
+dbhost =                                       #ip or hostname for mysql server
+dbuser =                                       # mysql username
+dbpass =                                       # mysql password
+dbname =                                       # database name
+dbtable =                                      # database table name
+redlogin =                                     # reddit username
+redpass =                                      # reddit password
+subname =                                      # subreddit name
+time_sleep =                                   # time to wait between scans
+user_agent = Mentionbutt 0.9a - Scans subs for keywords. msg uwotm8b0t (o not 0) if needed
