@@ -3,7 +3,7 @@
 # Mentionbot uses MySQL to store posts. Make sure you assign it
 # to an existing table with relevant privileges.
 
-keywords = keywords, go, here                  #keywords. Split with commas
+keywords = keyword1, keyword2, keyword3        #keywords. Split with commas
 dbhost =                                       #ip or hostname for mysql server
 dbuser =                                       # mysql username
 dbpass =                                       # mysql password
