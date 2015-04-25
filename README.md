@@ -10,9 +10,9 @@ This is a really basic bot for searching Reddit for keywords. You can search by 
 
 # Setup
 1. Set up a MySQL compatible database and:
-    -create a database
-    -create a table named 'posts' with the text columns: subid, title, link
-    -create a user with full privileges to it.
+  * create a database
+  * create a table named 'posts' with the text columns: subid, title, link
+  * create a user with full privileges to it.
 2. Open 'mentionbot.setup' and enter your configuration.
 3. Run it!
 
