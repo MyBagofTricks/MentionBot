@@ -32,11 +32,11 @@ time_sleep = int(config['time_sleep'])
 class MySQL(object):
 
     def addpost(self, id, title, link):
-        print ("[+] POST ADDED! | {} | {}...".format(link, title[0:27]))
+        print ("[+] POST ADDED! | {} | {}...".format(link, title[0:35]))
         db = pymysql.connect(dbhost, dbuser, dbpass, 'mentionbot',
                              charset='utf8')
         cursor = db.cursor()
-        cmd = "INSERT INTO posts (subid, title, link) VALUES (%s, %s, %s)"
+        cmd = u"INSERT INTO posts (subid, title, link) VALUES (%s, %s, %s)"
         cursor.execute(cmd, (id, title, link))
         db.commit()
         db.close()
@@ -59,7 +59,7 @@ class MySQL(object):
     @staticmethod
     def populate():
         try:
-            print('*' * 72 + "\n[-] Populating existing thread")
+            print('*' * 80 + "\n[-] Populating existing thread")
             db = pymysql.connect(
                 dbhost, dbuser, dbpass, 'mentionbot', charset='utf8')
             cursor = db.cursor()
@@ -70,8 +70,8 @@ class MySQL(object):
                 subid = row[0]
                 subid_array.append(subid)
             db.close()
-            print ('*' * 72 + "\n[+] Database loaded. {} post(s) already "
-                  + "populated.\n" + '*' * 72).format(len(subid_array))
+            print ('*' * 80 + "\n[+] Database loaded. {} post(s) already "
+                  + "populated.\n" + '*' * 80).format(len(subid_array))
         except IOError as e:
             print ("[x] Error = " + str(e))
 
@@ -79,7 +79,7 @@ class MySQL(object):
 class NoSQL(object):
 
     def addpost(self, id, title, link):
-        print ("[+] POST ADDED! | {} | {}...".format(link, title[0:27]))
+        print ("[+] POST ADDED! | {} | {}...".format(link, title[0:35]))
         subid_array.append(id)
 
 
@@ -100,7 +100,7 @@ def run_bot():
            + "Scanning /r/{} for keyword(s)".format(subname))
     try:
         subreddit = r.get_subreddit(subname)
-        for sub in subreddit.get_new(limit=100):
+        for sub in subreddit.get_new(limit=1000):
             title_text = sub.selftext.title()
             has_keyword = any(string in title_text for string in keywords)
             if sub.id not in subid_array and has_keyword and usesql is True:
@@ -114,14 +114,14 @@ def run_bot():
             else:
                 pass
     except IOError as e:
-        print "[x] Error " + str(e)
+        print ("[x] Error " + str(e))
     except ValueError as e:
-        print "[x] Error " + str(e)
+        print ("[x] Error " + str(e))
     except Exception as e:
-        print "[x] Error " + str(e)
+        print ("[x] Error " + str(e))
 
 
-print ('*' * 72 + """
+print ('*' * 80 + """
 *
 *    Welcome to MentionBot0.9a. I scan reddit for keywords and save
 *    them to a database. Why? I don't know!
@@ -129,7 +129,7 @@ print ('*' * 72 + """
 *    To exit, press CTRL+c.
 *
 *    github : https://github.com/MyBagofTricks/MentionBot
-""" + '*' * 72 + "\n")
+""" + '*' * 80 + "\n")
 
 r = praw.Reddit(user_agent)
 r.login(redlogin, redpass)
