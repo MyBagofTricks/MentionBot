@@ -8,6 +8,8 @@ __WEBSITE__ = "http://github.com/MyBagofTricks/MentionBot"
 
 import praw
 import pymysql
+import sys
+import signal
 from time import sleep, localtime, strftime
 from modules import messages as msg
 import settings
@@ -37,7 +39,7 @@ class MySQL(Post):
 
     @staticmethod
     def empty():
-        clear = raw_input('[-] Clear the database? [y/n]?: ')
+        clear = input('[-] Clear the database? [y/n]?: ')
         if clear in ('y', 'Y', 'yes', 'YES'):
             msg.print_clear()
             query = pymysql.connect(settings.db['host'], settings.db['user'],
@@ -66,7 +68,7 @@ class MySQL(Post):
                 done.append(subid)
             query.close()
             msg.print_loaded(len(done))
-        except Exception as e:
+        except pymysql.Error as e:
             msg.error_gen(e)
 
 
@@ -85,9 +87,14 @@ def init_db():
         MySQL.empty()
         MySQL.populate()
         return True
-    except Exception as e:
+    except pymysql.OperationalError as e:
         msg.error_nosql(e)
         return False
+
+
+def handle_sigint(signum, frame):
+    msg.error_exit()
+    sys.exit()
 
 
 # Connects to reddit and finds new posts
@@ -115,15 +122,11 @@ def run_bot():
 
 if __name__ == '__main__':
 
-    msg.print_title(__VERSION__)
-    msg.print_details(__WEBSITE__)
+    msg.print_title(__VERSION__, __WEBSITE__)
     usesql = init_db()
     r = praw.Reddit(settings.r_login['agent'])
     r.login(settings.r_login['user'], settings.r_login['pwd'])
-
-    try:
-        while True:
-            run_bot()
-            sleep(settings.time_sleep)
-    except KeyboardInterrupt, SystemExit:
-        msg.error_exit()
+    signal.signal(signal.SIGINT, handle_sigint)
+    while True:
+        run_bot()
+        sleep(settings.time_sleep)

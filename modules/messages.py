@@ -1,4 +1,4 @@
-def print_title(__version__):
+def print_title(__version__, __website__):
     print ('\n' * 80 +  '*' * 80 +  """
    _____                 __  .__             __________        __
   /     \   ____   _____/  |_|__| ____   ____\______   \ _____/  |_
@@ -6,11 +6,10 @@ def print_title(__version__):
 /    Y    \  ___/|   |  \  | |  (  <_> )   |  \    |   (  <_> )  |
 \____|__  /\___  >___|  /__| |__|\____/|___|  /______  /\____/|__|
         \/     \/     \/                    \/       \/
-{}           """ + '\n\n' + '*' * 80).format(__version__)
+{}
 
+********************************************************************************
 
-def print_details(__website__):
-    print ("""
 Welcome to Mentionbot! This simple bot scans Reddit for keywords, then
 writes the results to a MySQL database.
 
@@ -25,7 +24,9 @@ Requirements:
         - database named 'mentionbot'
         - table named 'posts'
         - user created with all privileges to the table
-         """ + '\n' + '*' * 80).format(__website__)
+
+********************************************************************************
+""".format(__version__, __website__))
 
 def print_add(link, title):
     print ("[+] POST ADDED! | {} | {}...".format(link, title[0:35]))
@@ -40,8 +41,8 @@ def print_populating():
     print ("[-] Populating existing threads.")
 
 def print_loaded(done):
-    print ("[+] Database successfully loaded. {} post(s) already "
-           + "populated.\n" + '*' * 80).format(done)
+    print ("[+] Database successfully loaded. {} post(s) already populated.\n"
+           .format(done))
 
 def run_msg(c_time, red_sub):
     print ("[-] {} Scanning /r/{} for keyword(s)".format(c_time, red_sub))
@@ -51,8 +52,8 @@ def error_gen(e):
 
 def error_nosql(e):
     print ("[x] ERROR! {}\n[x] You are currently using Mentionbot without "
-           + "a database.\n[x] This mode is mostly for testing and not very "
-           + "useful.").format(e)
+           "a database.\n[x] This mode is mostly for testing and not very "
+           "useful.".format(e))
 
 def error_exit():
     print ("\n[*] Exiting Mentionbot.\n[*] Goodbye!")
