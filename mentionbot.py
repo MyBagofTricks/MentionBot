@@ -54,7 +54,6 @@ class MySQL(Post):
     @staticmethod
     def populate():
         try:
-#            msg.print_populating()
             query = pymysql.connect(settings.db['host'], settings.db['user'],
                                     settings.db['pwd'], settings.db['db'],
                                     charset='utf8')
