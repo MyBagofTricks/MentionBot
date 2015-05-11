@@ -1,143 +1,130 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
-########################################################################
-#                              Mentionbot                              #
-########################################################################
-
-# This is Mentionbot, a simple script which scans reddit.com for
-# keywords and stores them in a database.
-#
-# LICENSED UNDER GPL. See LICENSE for details.
-#
-# github : https://github.com/MyBagofTricks/MentionBot
+__AUTHOR__ = "MyBagofTricks"
+__COPYRIGHT__ = "2014-2015"
+__LICENSE__ = "GPL"
+__VERSION__ = "MentionBot 0.9.1b"
+__WEBSITE__ = "http://github.com/MyBagofTricks/MentionBot"
 
 import praw
 import pymysql
 from time import sleep, localtime, strftime
-from sys import argv
-from configobj import ConfigObj
-subid_array = []
-config = ConfigObj('mentionbot.setup')
-keywords = config['keywords']
-dbhost = config['dbhost']
-dbuser = config['dbuser']
-dbpass = config['dbpass']
-redlogin = config['redlogin']
-redpass = config['redpass']
-subname = config['subname']
-user_agent = config['user_agent']
-time_sleep = int(config['time_sleep'])
+from modules import messages as msg
+import settings
+done = []
 
 
-class MySQL(object):
+class Post(object):
 
-    def addpost(self, id, title, link):
-        print ("[+] POST ADDED! | {} | {}...".format(link, title[0:35]))
-        db = pymysql.connect(dbhost, dbuser, dbpass, 'mentionbot',
-                             charset='utf8')
-        cursor = db.cursor()
-        cmd = u"INSERT INTO posts (subid, title, link) VALUES (%s, %s, %s)"
-        cursor.execute(cmd, (id, title, link))
-        db.commit()
-        db.close()
+    def __init__(self, sub_id, title, link):
+        self.sub_id = sub_id
+        self.title = title
+        self.link = link
+
+
+class MySQL(Post):
+
+    def addpost(self):
+        msg.print_add(self.link, self.title)
+        query = pymysql.connect(settings.db['host'], settings.db['user'],
+                                settings.db['pwd'], settings.db['db'],
+                                charset='utf8')
+        cursor = query.cursor()
+        cmd = "INSERT INTO posts (subid, title, link) VALUES (%s, %s, %s)"
+        cursor.execute(cmd, (self.sub_id, self.title, self.link))
+        query.commit()
+        query.close()
 
     @staticmethod
     def empty():
         clear = raw_input('[-] Clear the database? [y/n]?: ')
         if clear in ('y', 'Y', 'yes', 'YES'):
-            print ("[-] Clearing database...")
-            db = pymysql.connect(
-                dbhost, dbuser, dbpass, 'mentionbot', charset='utf8')
-            cursor = db.cursor()
+            msg.print_clear()
+            query = pymysql.connect(settings.db['host'], settings.db['user'],
+                                    settings.db['pwd'], settings.db['db'],
+                                    charset='utf8')
+            cursor = query.cursor()
             cmd = "DELETE FROM posts"
             cursor.execute(cmd)
-            db.commit()
-            db.close()
+            query.commit()
+            query.close()
         else:
-            print ("[-] Database was not cleared.")
+            msg.print_not_clear()
 
     @staticmethod
     def populate():
         try:
-            print('*' * 80 + "\n[-] Populating existing thread")
-            db = pymysql.connect(
-                dbhost, dbuser, dbpass, 'mentionbot', charset='utf8')
-            cursor = db.cursor()
+#            msg.print_populating()
+            query = pymysql.connect(settings.db['host'], settings.db['user'],
+                                    settings.db['pwd'], settings.db['db'],
+                                    charset='utf8')
+            cursor = query.cursor()
             cmd = "SELECT * FROM posts"
             cursor.execute(cmd)
             results = cursor.fetchall()
             for row in results:
                 subid = row[0]
-                subid_array.append(subid)
-            db.close()
-            print ('*' * 80 + "\n[+] Database loaded. {} post(s) already "
-                  + "populated.\n" + '*' * 80).format(len(subid_array))
-        except IOError as e:
-            print ("[x] Error = " + str(e))
+                done.append(subid)
+            query.close()
+            msg.print_loaded(len(done))
+        except Exception as e:
+            msg.error_gen(e)
 
 
-class NoSQL(object):
+# This class handles posts when SQL database can't be authenticated
+class NoSQL(Post):
 
-    def addpost(self, id, title, link):
-        print ("[+] POST ADDED! | {} | {}...".format(link, title[0:35]))
-        subid_array.append(id)
+    def addpost(self):
+        msg.print_add(self.link, self.title)
+        done.append(self.sub_id)
 
 
-def initialize_db():
+# Sets up database and preloads posts. Failure to authenticate a database
+# will fail Mentionbot gracefully into a test mode.
+def init_db():
     try:
         MySQL.empty()
         MySQL.populate()
         return True
     except Exception as e:
-        print ("[x] ERROR! Unable to load database!\n[x] " +  str(e) +
-            "\n[x] You are currently using Mentionbot without a database. \n"+
-            "[x] This mode is mostly for testing and not very useful.")
+        msg.error_nosql(e)
         return False
 
 
+# Connects to reddit and finds new posts
 def run_bot():
-    print ("[-] " + strftime("%a, %y-%m-%d %H:%M:%S %Z ", localtime())
-           + "Scanning /r/{} for keyword(s)".format(subname))
+    msg.run_msg(strftime("%a, %y-%m-%d %H:%M:%S %Z ", localtime()),
+                settings.r_login['sub'])
     try:
-        subreddit = r.get_subreddit(subname)
+        subreddit = r.get_subreddit(settings.r_login['sub'])
         for sub in subreddit.get_new(limit=1000):
             title_text = sub.selftext.title()
-            has_keyword = any(string in title_text for string in keywords)
-            if sub.id not in subid_array and has_keyword and usesql is True:
-                subid_array.append(sub.id)
-                post = MySQL()
-                post.addpost(sub.id, sub.title, sub.short_link)
-            elif sub.id not in subid_array and has_keyword and usesql is False:
-                subid_array.append(sub.id)
-                post = NoSQL()
-                post.addpost(sub.id, sub.title, sub.short_link)
+            has_key = any(string in title_text for string in settings.keywords)
+            if sub.id not in done and has_key and usesql is True:
+                done.append(sub.id)
+                post = MySQL(sub.id, sub.title, sub.short_link)
+                post.addpost()
+            elif sub.id not in done and has_key and usesql is False:
+                done.append(sub.id)
+                post = NoSQL(sub.id, sub.title, sub.short_link)
+                post.addpost()
             else:
                 pass
-    except IOError as e:
-        print ("[x] Error " + str(e))
-    except ValueError as e:
-        print ("[x] Error " + str(e))
     except Exception as e:
-        print ("[x] Error " + str(e))
+        msg.error_gen(e)
 
 
-print ('*' * 80 + """
-*
-*    Welcome to MentionBot0.9a. I scan reddit for keywords and save
-*    them to a database. Why? I don't know!
-*
-*    To exit, press CTRL+c.
-*
-*    github : https://github.com/MyBagofTricks/MentionBot
-""" + '*' * 80 + "\n")
+if __name__ == '__main__':
 
-r = praw.Reddit(user_agent)
-r.login(redlogin, redpass)
-usesql = initialize_db()
+    msg.print_title(__VERSION__)
+    msg.print_details(__WEBSITE__)
+    usesql = init_db()
+    r = praw.Reddit(settings.r_login['agent'])
+    r.login(settings.r_login['user'], settings.r_login['pwd'])
 
-try:
-    while True:
-        run_bot()
-        sleep(time_sleep)
-except KeyboardInterrupt, SystemExit:
-    print ("\n[*] Exiting Mentionbot.\n[*] Goodbye!")
+    try:
+        while True:
+            run_bot()
+            sleep(settings.time_sleep)
+    except KeyboardInterrupt, SystemExit:
+        msg.error_exit()
