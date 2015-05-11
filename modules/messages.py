@@ -16,7 +16,7 @@ writes the results to a MySQL database.
 Get the latest version at: {}
 
 Requirements:
-    - python 2.7 (migration to 3+ soon)
+    - python 3.5 (2.7.9+ should still work for now)
     - pyMySQL - https://github.com/PyMySQL/PyMySQL/
     - PRAW - https://praw.readthedocs.org/en/v2.1.20/
     - ConfigObj - http://www.voidspace.org.uk/python/configobj.html
