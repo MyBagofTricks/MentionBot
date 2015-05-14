@@ -18,10 +18,12 @@ done = []
 
 class Post(object):
 
-    def __init__(self, sub_id, title, link):
+    def __init__(self, sub_id, title, link, author, date):
         self.sub_id = sub_id
         self.title = title
         self.link = link
+        self.author = author
+        self.date = date
 
 
 class MySQL(Post):
@@ -32,8 +34,9 @@ class MySQL(Post):
                                 settings.db['pwd'], settings.db['db'],
                                 charset='utf8')
         cursor = query.cursor()
-        cmd = "INSERT INTO posts (subid, title, link) VALUES (%s, %s, %s)"
-        cursor.execute(cmd, (self.sub_id, self.title, self.link))
+        cmd = "INSERT INTO posts (subid, title, link, author, date) VALUES (%s, %s, %s, %s, %s)"
+        cursor.execute(
+            cmd, (self.sub_id, self.title, self.link, self.author, self.date))
         query.commit()
         query.close()
 
@@ -98,35 +101,40 @@ def handle_sigint(signum, frame):
 
 
 # Connects to reddit and finds new posts
-def run_bot():
-    msg.run_msg(strftime("%a, %y-%m-%d %H:%M:%S %Z ", localtime()),
-                settings.r_login['sub'])
-    try:
-        subreddit = r.get_subreddit(settings.r_login['sub'])
-        for sub in subreddit.get_new(limit=1000):
-            title_text = sub.selftext.title()
-            has_key = any(string in title_text for string in settings.keywords)
-            if sub.id not in done and has_key and usesql is True:
-                done.append(sub.id)
-                post = MySQL(sub.id, sub.title, sub.short_link)
-                post.addpost()
-            elif sub.id not in done and has_key and usesql is False:
-                done.append(sub.id)
-                post = NoSQL(sub.id, sub.title, sub.short_link)
-                post.addpost()
-            else:
-                pass
-    except Exception as e:
-        msg.error_gen(e)
 
 
-if __name__ == '__main__':
+def main():
 
+    signal.signal(signal.SIGINT, handle_sigint)
     msg.print_title(__VERSION__, __WEBSITE__)
     usesql = init_db()
     r = praw.Reddit(settings.r_login['agent'])
     r.login(settings.r_login['user'], settings.r_login['pwd'])
-    signal.signal(signal.SIGINT, handle_sigint)
     while True:
-        run_bot()
+        msg.run_msg(strftime("%a, %y-%m-%d %H:%M:%S %Z ", localtime()),
+                    settings.r_login['sub'])
+        try:
+            subreddit = r.get_subreddit(settings.r_login['sub'])
+            for sub in subreddit.get_new(limit=1000):
+                title_text = sub.selftext.title()
+                has_key = any(
+                    string in title_text for string in settings.keywords)
+                if sub.id not in done and has_key and usesql is True:
+                    done.append(sub.id)
+                    post = MySQL(
+                        sub.id, sub.title, sub.short_link, sub.author.name,
+                        sub.created)
+                    post.addpost()
+                elif sub.id not in done and has_key and usesql is False:
+                    done.append(sub.id)
+                    post = NoSQL(sub.id, sub.title, sub.short_link, sub.author)
+                    post.addpost()
+                else:
+                    pass
+        except Exception as e:
+            msg.error_gen(e)
         sleep(settings.time_sleep)
+
+
+if __name__ == '__main__':
+    main()
