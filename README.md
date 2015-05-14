@@ -10,7 +10,12 @@ This is a really basic bot for searching Reddit for keywords. You can search by 
 # Setup
 1. Set up a MySQL compatible database and:
   * create a database
-  * create a table named 'posts' with the text columns: subid, title, link
+  * create a table named 'posts' with the text columns: 
+    * subid (TEXT or VARCHAR(10+))
+    * title (TEXT or VARCHAR(255))
+    * link (TEXT or VARCHAR(30+)) 
+    * author (TEXT or VARCHAR(20+))
+    * Posix Time (INT)
   * create a user with full privileges to it.
 2. Open 'settings.py' and enter your configuration.
 3. Run Mentionbot using 'python mentionbot.py'.
