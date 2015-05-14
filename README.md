@@ -10,7 +10,7 @@ This is a really basic bot for searching Reddit for keywords. You can search by 
 # Setup
 1. Set up a MySQL compatible database and:
   * create a database
-  * create a table named 'posts' with the text columns: 
+  * create a table named 'posts' with the columns: 
     * subid (TEXT or VARCHAR(10+))
     * title (TEXT or VARCHAR(255))
     * link (TEXT or VARCHAR(30+)) 
