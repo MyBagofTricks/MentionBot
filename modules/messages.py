@@ -1,4 +1,4 @@
-def print_title(__version__, __website__):
+def print_title():
     print ('\n' * 80 +  '*' * 80 +  """
    _____                 __  .__             __________        __
   /     \   ____   _____/  |_|__| ____   ____\______   \ _____/  |_
@@ -6,27 +6,26 @@ def print_title(__version__, __website__):
 /    Y    \  ___/|   |  \  | |  (  <_> )   |  \    |   (  <_> )  |
 \____|__  /\___  >___|  /__| |__|\____/|___|  /______  /\____/|__|
         \/     \/     \/                    \/       \/
-{}
+Verison 0.95a
 
 ********************************************************************************
 
 Welcome to Mentionbot! This simple bot scans Reddit for keywords, then
 writes the results to a MySQL database.
 
-Get the latest version at: {}
+    Get the latest version at: http://github.com/MyBagofTricks
 
 Requirements:
-    - python 3.5 (2.7.9+ should still work for now)
+    - python 3.5 (older versions should still work)
     - pyMySQL - https://github.com/PyMySQL/PyMySQL/
     - PRAW - https://praw.readthedocs.org/en/v2.1.20/
-    - ConfigObj - http://www.voidspace.org.uk/python/configobj.html
     - MySQL compatible database with
         - database named 'mentionbot'
         - table named 'posts'
         - user created with all privileges to the table
 
 ********************************************************************************
-""".format(__version__, __website__))
+""")
 
 def print_add(link, title):
     print ("[+] POST ADDED! | {} | {}...".format(link, title[0:35]))

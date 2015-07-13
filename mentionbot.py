@@ -1,140 +1,121 @@
 #!/usr/bin/env python
+# Script:  Mentionbot
+# Author:  MyBagofTricks
+# Version: 0.95a
+# Website: http://github.com/MyBagofTricks
 
-__AUTHOR__ = "MyBagofTricks"
-__COPYRIGHT__ = "2014-2015"
-__LICENSE__ = "GPL"
-__VERSION__ = "MentionBot 0.9.1b"
-__WEBSITE__ = "http://github.com/MyBagofTricks/MentionBot"
-
-import praw
-import pymysql
+# Importing standard modules
 import sys
 import signal
 from time import sleep, localtime, strftime
-from modules import messages as msg
-import settings
+# Try loading third party modules and folders
+try:
+    import praw
+    import pymysql
+    from modules import messages as msg
+    import settings as sets
+except Exception as e:
+    print ("[x] Error: {}".format(e))
+    sys.exit()
 done = []
 
 
-class Post(object):
-
-    def __init__(self, sub_id, title, link, author, date):
-        self.sub_id = sub_id
-        self.title = title
-        self.link = link
-        self.author = author
-        self.date = date
-
-
-class MySQL(Post):
-
-    def addpost(self):
-        msg.print_add(self.link, self.title)
-        query = pymysql.connect(settings.db['host'], settings.db['user'],
-                                settings.db['pwd'], settings.db['db'],
+def addpost(subid, title, link, author, subname, created, sql):
+    done.append(subid)
+    msg.print_add(link, title)
+    if sql:
+        query = pymysql.connect(sets.db['host'], sets.db['user'],
+                                sets.db['pwd'], sets.db['db'],
                                 charset='utf8')
         cursor = query.cursor()
-        cmd = "INSERT INTO posts (subid, title, link, author, date) VALUES (%s, %s, %s, %s, %s)"
+        cmd = "INSERT INTO posts (subid, title, link, author, subname, date) VALUES (%s, %s, %s, %s, %s, %s)"
         cursor.execute(
-            cmd, (self.sub_id, self.title, self.link, self.author, self.date))
+            cmd, (subid, title, link, author, subname, created))
         query.commit()
         query.close()
-
-    @staticmethod
-    def empty():
-        clear = input('[-] Clear the database? [y/n]?: ')
-        if clear in ('y', 'Y', 'yes', 'YES'):
-            msg.print_clear()
-            query = pymysql.connect(settings.db['host'], settings.db['user'],
-                                    settings.db['pwd'], settings.db['db'],
-                                    charset='utf8')
-            cursor = query.cursor()
-            cmd = "DELETE FROM posts"
-            cursor.execute(cmd)
-            query.commit()
-            query.close()
-        else:
-            msg.print_not_clear()
-
-    @staticmethod
-    def populate():
-        try:
-            query = pymysql.connect(settings.db['host'], settings.db['user'],
-                                    settings.db['pwd'], settings.db['db'],
-                                    charset='utf8')
-            cursor = query.cursor()
-            cmd = "SELECT * FROM posts"
-            cursor.execute(cmd)
-            results = cursor.fetchall()
-            for row in results:
-                subid = row[0]
-                done.append(subid)
-            query.close()
-            msg.print_loaded(len(done))
-        except pymysql.Error as e:
-            msg.error_gen(e)
+    else:
+        pass    # Exists to handle debug mode where db isn't present
 
 
-# This class handles posts when SQL database can't be authenticated
-class NoSQL(Post):
+def empty():
+    clear = input('[-] Clear the database? [y/n]?: ')
+    if clear in ('y', 'Y', 'yes', 'YES', 'Yes'):
+        msg.print_clear()
+        query = pymysql.connect(sets.db['host'], sets.db['user'],
+                                sets.db['pwd'], sets.db['db'],
+                                charset='utf8')
+        cursor = query.cursor()
+        cmd = "DELETE FROM posts"
+        cursor.execute(cmd)
+        query.commit()
+        query.close()
+    else:
+        msg.print_not_clear()
 
-    def addpost(self):
-        msg.print_add(self.link, self.title)
-        done.append(self.sub_id)
+
+def populate():
+    query = pymysql.connect(sets.db['host'], sets.db['user'],
+                            sets.db['pwd'], sets.db['db'],
+                            charset='utf8')
+    cursor = query.cursor()
+    cmd = "SELECT * FROM posts"
+    cursor.execute(cmd)
+    results = cursor.fetchall()
+    for row in results:
+        subid = row[0]
+        done.append(subid)
+    query.close()
+    msg.print_loaded(len(done))
 
 
-# Sets up database and preloads posts. Failure to authenticate a database
-# will fail Mentionbot gracefully into a test mode.
 def init_db():
     try:
-        MySQL.empty()
-        MySQL.populate()
+        empty()
+        populate()
         return True
     except pymysql.OperationalError as e:
         msg.error_nosql(e)
         return False
 
 
-def handle_sigint(signum, frame):
+def handle_sigint(signum, frame):       # handles CTRL-C exiting
     msg.error_exit()
     sys.exit()
 
 
-# Connects to reddit and finds new posts
-
-
 def main():
 
+    msg.print_title()
     signal.signal(signal.SIGINT, handle_sigint)
-    msg.print_title(__VERSION__, __WEBSITE__)
     usesql = init_db()
-    r = praw.Reddit(settings.r_login['agent'])
-    r.login(settings.r_login['user'], settings.r_login['pwd'])
-    while True:
-        msg.run_msg(strftime("%a, %y-%m-%d %H:%M:%S %Z ", localtime()),
-                    settings.r_login['sub'])
-        try:
-            subreddit = r.get_subreddit(settings.r_login['sub'])
-            for sub in subreddit.get_new(limit=1000):
-                title_text = sub.selftext.title()
-                has_key = any(
-                    string in title_text for string in settings.keywords)
-                if sub.id not in done and has_key and usesql is True:
-                    done.append(sub.id)
-                    post = MySQL(
-                        sub.id, sub.title, sub.short_link, sub.author.name,
-                        sub.created)
-                    post.addpost()
-                elif sub.id not in done and has_key and usesql is False:
-                    done.append(sub.id)
-                    post = NoSQL(sub.id, sub.title, sub.short_link, sub.author)
-                    post.addpost()
-                else:
-                    pass
-        except Exception as e:
-            msg.error_gen(e)
-        sleep(settings.time_sleep)
+    r = praw.Reddit(sets.r_login['agent'])
+    try:
+        r.login(
+            sets.r_login['user'], sets.r_login['pwd'], disable_warning=True)
+    except (praw.errors.InvalidUserPass, praw.errors.InvalidUser) as e:
+        print ("Login error: {}".format(e))
 
+    while True:
+        for cur_sub in sets.subs:
+            msg.run_msg(strftime("%a, %y-%m-%d %H:%M:%S %Z ", localtime()),
+                        cur_sub)
+            subreddit = r.get_subreddit(cur_sub)
+            try:
+                for sub in subreddit.get_new(limit=1000):
+                    title_text = sub.selftext.title()
+                    has_key = any(
+                        string in title_text.lower() for string in sets.keywords)
+                    if sub.id not in done and has_key:
+                        if sub.author.name is False:
+                            sub.author.name = "Deleted"
+                        addpost(sub.id, sub.title, sub.short_link,
+                                sub.author.name, str(sub.subreddit),
+                                sub.created, usesql)
+                    else:
+                        pass
+            except Exception as e:
+                msg.error_gen(e)
+        sleep(sets.time_sleep)
 
 if __name__ == '__main__':
     main()

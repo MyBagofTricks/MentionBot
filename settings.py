@@ -14,10 +14,10 @@ db = dict(
 r_login = dict(
     user = 'reddit username',  # Reddit user name
     pwd = 'reddit password',  # Reddit user password
-    sub = 'pics',  # Subreddit to scan
     agent = "Mentionbutt 0.9aa - Scans subs for keywords. msg uwotm8b0t if \
     needed"  #  Script info.
 )
 #  Keywords must be split with quotes and commas
 keywords = "keyword1", "keyword2", "keyword3", "keyword4", "keyword5"
 time_sleep = 120  # Time between cycles
+subs = 'pics', 'funny', 'bestof', 'politics'  # Subreddit to scan
