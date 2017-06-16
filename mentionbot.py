@@ -1,16 +1,13 @@
 #!/usr/bin/env python
 # Script:  Mentionbot
 # Author:  MyBagofTricks
-# Version: 0.95
+# Version: 0.96
 # Website: http://github.com/MyBagofTricks
 
-import signal
 from time import sleep, localtime, strftime
 import praw
 import pymysql
-import pymysql.cursors
-import json
-from os import path
+
 try:
     from modules import messages as msg
     import settings as sets
@@ -19,10 +16,10 @@ except ImportError as err:
     raise SystemExit
 done = []
 
+
 def addpost(subid, title, link, author, subname, created, sql):
     query = pymysql.connect(
-        sets.sql['host'], sets.sql['user'],
-        sets.sql['pwd'], sets.sql['db'],
+        sets.sql['host'], sets.sql['user'], sets.sql['pwd'], sets.sql['db'],
         charset='utf8mb4'
     )
     try:
@@ -37,8 +34,7 @@ def addpost(subid, title, link, author, subname, created, sql):
 
 def empty():
     query = pymysql.connect(
-        sets.sql['host'], sets.sql['user'],
-        sets.sql['pwd'], sets.sql['db'],
+        sets.sql['host'], sets.sql['user'], sets.sql['pwd'], sets.sql['db'],
         charset='utf8mb4'
     )
     try:
@@ -55,8 +51,7 @@ def empty():
 
 def populate():
     query = pymysql.connect(
-        sets.sql['host'], sets.sql['user'],
-        sets.sql['pwd'], sets.sql['db'],
+        sets.sql['host'], sets.sql['user'], sets.sql['pwd'], sets.sql['db'],
         charset='utf8mb4'
     )
     try:
@@ -86,15 +81,13 @@ def init_db():
         msg.print_not_clear()
 
 
-def handle_sigint(signum, frame):       # handles CTRL-C exiting
-    msg.error_exit()
-    raise SystemExit
+
 
 
 def main():
     try:
         reddit = praw.Reddit(
-            client_id=sets.reddit['client_id'],
+            client_id=sets.reddit['client_id'], 
             client_secret=sets.reddit['client_secret'],
             password=sets.reddit['password'],
             user_agent=sets.reddit['user_agent'],
@@ -103,7 +96,6 @@ def main():
     except praw.exceptions.ClientException as err:
         print("[x] Login error  - {err}".format(err=err))
         raise SystemExit
-    signal.signal(signal.SIGINT, handle_sigint)
     msg.print_title()
     init_db()
     while True:
