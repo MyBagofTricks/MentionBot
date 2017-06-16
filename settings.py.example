@@ -12,11 +12,14 @@ db = dict(
 )
 
 r_login = dict(
-    user = 'reddit username',  # Reddit user name
-    pwd = 'reddit password',  # Reddit user password
-    agent = "Mentionbutt 0.9aa - Scans subs for keywords. msg uwotm8b0t if \
-    needed"  #  Script info.
+    client_id='CLIENT ID',
+    client_secret='CLIENT SECRET',
+    user_name='ACCOUNT USERNAME',
+    password='ACCOUNT PASSWORD',
+    user_agent='Mentionbot - a script that looks for mentions',
 )
+
+
 #  Keywords must be split with quotes and commas
 keywords = "keyword1", "keyword2", "keyword3", "keyword4", "keyword5"
 time_sleep = 120  # Time between cycles
