@@ -50,8 +50,6 @@ def createtable():
     return True
 
 
-
-
 def empty():
     query = pymysql.connect(
         sets.db['host'], sets.db['user'],
@@ -106,9 +104,6 @@ def handle_sigint(signum, frame):       # handles CTRL-C exiting
     raise SystemExit
 
 
-
-
-
 def main():
     try:
         reddit = praw.Reddit(
@@ -120,9 +115,9 @@ def main():
     )
     except praw.exceptions.ClientException as err:
         print("[x] Login error  - {err}".format(err=err))
-        msg.print_title()
         raise SystemExit
     signal.signal(signal.SIGINT, handle_sigint)
+    msg.print_title()
     usesql = init_db()
     while True:
         for cur_sub in sets.subs:
@@ -137,7 +132,7 @@ def main():
                         if submission.author is False:
                             submission.author = "Deleted"
                         addpost(submission.id, submission.title, submission.shortlink,
-                                'submission.author', str(cur_sub),
+                                'submission.author', submission.display_name,
                                 submission.created, True)
                     else:
                         pass
