@@ -3,24 +3,24 @@
 # Mentionbot uses MySQL to store posts. Make sure you assign it
 # to an existing table with relevant privileges.
 
-db = dict(
-    host = 'localhost',  # IP or FQDN of mysql server
-    db = 'mentionbot',  # Database name
-    user = 'username',  # Database user name
-    pwd =  'password',  # Database user password
-    table = 'posts',  # Table name
-)
+conf = {
+    "keywords": ["key1", "key2", "key3", "key4", "key5"],
+    "subs": ["sub1", "sub2", "sub3", "sub4", "sub5"],
+    "sleep": 120
+}
 
-r_login = dict(
-    client_id='CLIENT ID',
-    client_secret='CLIENT SECRET',
-    user_name='ACCOUNT USERNAME',
-    password='ACCOUNT PASSWORD',
-    user_agent='Mentionbot - a script that looks for mentions',
-)
+sql = {
+    "host": "localhost",  # IP or FQDN of mysql server
+    "db": "mentionbot",  # Database name
+    "user": "username",  # Database user name
+    "pwd": "password",  # Database user password
+    "table": "posts",  # Table name
+}
 
-
-#  Keywords must be split with quotes and commas
-keywords = "keyword1", "keyword2", "keyword3", "keyword4", "keyword5"
-time_sleep = 120  # Time between cycles
-subs = 'pics', 'funny', 'bestof', 'politics'  # Subreddit to scan
+reddit = {
+    "client_id": "CLIENT ID",
+    "client_secret": "CLIENT SECRET",
+    "user_name": "ACCOUNT USERNAME",
+    "password": "ACCOUNT PASSWORD",
+    "user_agent": "Mentionbot - a script that looks for mentions"
+}

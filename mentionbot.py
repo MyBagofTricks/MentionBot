@@ -6,11 +6,12 @@
 
 import signal
 from time import sleep, localtime, strftime
-
+import praw
+import pymysql
+import pymysql.cursors
+import json
+from os import path
 try:
-    import praw
-    import pymysql
-    import pymysql.cursors
     from modules import messages as msg
     import settings as sets
 except ImportError as err:
@@ -18,12 +19,11 @@ except ImportError as err:
     raise SystemExit
 done = []
 
-
 def addpost(subid, title, link, author, subname, created, sql):
     query = pymysql.connect(
-        sets.db['host'], sets.db['user'],
-        sets.db['pwd'], sets.db['db'],
-        charset='utf8'
+        sets.sql['host'], sets.sql['user'],
+        sets.sql['pwd'], sets.sql['db'],
+        charset='utf8mb4'
     )
     try:
         with query.cursor() as cursor:
@@ -34,31 +34,19 @@ def addpost(subid, title, link, author, subname, created, sql):
     finally:
         query.close()
 
-def createtable():
-    query = pymysql.connect(
-        sets.db['host'], sets.db['user'],
-        sets.db['pwd'], sets.db['db'],
-        charset='utf8'
-    )
-    try:
-        with query.cursor() as cursor:
-            cmd = "CREATE TABLE posts (subid text,title text,"\
-            "link text, author text, subname text, created int(11))"
-            cursor.execute(cmd)
-    finally:
-        query.close()
-    return True
-
 
 def empty():
     query = pymysql.connect(
-        sets.db['host'], sets.db['user'],
-        sets.db['pwd'], sets.db['db'],
-        charset='utf8'
+        sets.sql['host'], sets.sql['user'],
+        sets.sql['pwd'], sets.sql['db'],
+        charset='utf8mb4'
     )
     try:
         with query.cursor() as cursor:
             cmd = "DROP TABLE IF EXISTS posts"
+            cursor.execute(cmd)
+            cmd = "CREATE TABLE posts (subid text,title text,"\
+            "link text, author text, subname text, created int(11))"
             cursor.execute(cmd)
             query.commit()
     finally:
@@ -67,9 +55,9 @@ def empty():
 
 def populate():
     query = pymysql.connect(
-        sets.db['host'], sets.db['user'],
-        sets.db['pwd'], sets.db['db'],
-        charset='utf8'
+        sets.sql['host'], sets.sql['user'],
+        sets.sql['pwd'], sets.sql['db'],
+        charset='utf8mb4'
     )
     try:
         with query.cursor() as cursor:
@@ -90,7 +78,6 @@ def init_db():
         msg.print_clear()
         try:
             empty()
-            createtable()
         except pymysql.OperationalError as err:
             msg.error_nosql(err)
             return False
@@ -107,38 +94,36 @@ def handle_sigint(signum, frame):       # handles CTRL-C exiting
 def main():
     try:
         reddit = praw.Reddit(
-            client_id=sets.r_login['client_id'],
-            client_secret=sets.r_login['client_secret'],
-            password=sets.r_login['password'],
-            user_agent=sets.r_login['user_agent'],
-            user_name=sets.r_login['user_name'],
+            client_id=sets.reddit['client_id'],
+            client_secret=sets.reddit['client_secret'],
+            password=sets.reddit['password'],
+            user_agent=sets.reddit['user_agent'],
+            user_name=sets.reddit['user_name'],
     )
     except praw.exceptions.ClientException as err:
         print("[x] Login error  - {err}".format(err=err))
         raise SystemExit
     signal.signal(signal.SIGINT, handle_sigint)
     msg.print_title()
-    usesql = init_db()
+    init_db()
     while True:
-        for cur_sub in sets.subs:
-            msg.run_msg(strftime("%a, %y-%m-%d %H:%M:%S %Z ", localtime()),
-                        cur_sub)
+        msg.run_msg(strftime("%a, %y-%m-%d %H:%M:%S %Z ", localtime()),
+                        sets.conf['subs'])
+        for submission in reddit.subreddit("+".join(sets.conf['subs'])).new(limit=1000):
+            name = str(submission.author)
+            subname = str(submission.subreddit_name_prefixed)
             try:
-                for submission in reddit.subreddit('/all').new(limit=1000):
-                    title_text = submission.title
-                    has_key = any(
-                        string in title_text.lower() for string in sets.keywords)
-                    if submission not in done and has_key:
-                        if submission.author is False:
-                            submission.author = "Deleted"
-                        addpost(submission.id, submission.title, submission.shortlink,
-                                'submission.author', submission.display_name,
-                                submission.created, True)
-                    else:
-                        pass
+                has_key = any(
+                    string in submission.title.lower() for string in sets.conf['keywords'])
+                if submission not in done and has_key:
+                    addpost(
+                        submission.id, submission.title, submission.shortlink,
+                        str(submission.author), str(submission.subreddit_name_prefixed), submission.created, True)
+                else:
+                    pass
             except Exception as e:
                 msg.error_gen(e)
-        sleep(sets.time_sleep)
+        sleep(sets.conf['sleep'])
 
 if __name__ == '__main__':
     main()

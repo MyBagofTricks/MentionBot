@@ -44,7 +44,7 @@ def print_loaded(done):
            .format(done))
 
 def run_msg(c_time, red_sub):
-    print ("[-] {} Scanning /r/{} for keyword(s)".format(c_time, red_sub))
+    print ("[-] {} Scanning {} for keyword(s)".format(c_time, red_sub))
 
 def error_gen(e):
     print ("[x] ERROR! {}".format(e))
