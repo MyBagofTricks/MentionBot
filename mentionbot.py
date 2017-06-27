@@ -5,27 +5,62 @@
 # Website: http://github.com/MyBagofTricks
 
 from time import sleep, localtime, strftime
+import logging
+
 import praw
 import pymysql
 
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s %(levelname)-4s %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
 try:
-    from modules import messages as msg
-    import settings as sets
+    import settings as SETS
 except ImportError as err:
-    print ("[x] Error: {}".format(err))
+    logger.error("Cannot continue - {}".format(err))
     raise SystemExit
 done = []
 
+dope_title = ('\n' * 80 + '*' * 80 + """
+   _____                 __  .__             __________        __
+  /     \   ____   _____/  |_|__| ____   ____\______   \ _____/  |_
+ /  \ /  \_/ __ \ /    \   __\  |/  _ \ /    \|    |  _//  _ \   __\\
+/    Y    \  ___/|   |  \  | |  (  <_> )   |  \    |   (  <_> )  |
+\____|__  /\___  >___|  /__| |__|\____/|___|  /______  /\____/|__|
+        \/     \/     \/                    \/       \/
+Verison 0.96
 
-def addpost(subid, title, link, author, subname, created, sql):
+********************************************************************************
+
+Welcome to Mentionbot! This simple bot scans Reddit for keywords, then
+writes the results to a MySQL database.
+
+    Get the latest version at: http://github.com/MyBagofTricks
+
+Requirements:
+    - python 3.5
+    - pyMySQL - https://github.com/PyMySQL/PyMySQL/
+    - PRAW - https://praw.readthedocs.io/en/latest/
+    - MySQL compatible database with
+        - database named 'mentionbot'
+        - table named 'posts'
+        - user created with all privileges to the table
+
+********************************************************************************
+""")
+
+
+def add_post(subid, title, link, author, subname, created, sql):
     query = pymysql.connect(
-        sets.sql['host'], sets.sql['user'], sets.sql['pwd'], sets.sql['db'],
-        charset='utf8mb4'
+        SETS.sql['host'], SETS.sql['user'], SETS.sql['pwd'], SETS.sql['db'],charset='utf8mb4'
     )
     try:
         with query.cursor() as cursor:
             cmd = "INSERT INTO posts (subid, title, link, author, subname, created)"\
-            "VALUES (%s, %s, %s, %s, %s, %s)"
+                "VALUES (%s, %s, %s, %s, %s, %s)"
             cursor.execute(cmd, (subid, title, link, author, subname, created))
             query.commit()
     finally:
@@ -34,15 +69,14 @@ def addpost(subid, title, link, author, subname, created, sql):
 
 def empty():
     query = pymysql.connect(
-        sets.sql['host'], sets.sql['user'], sets.sql['pwd'], sets.sql['db'],
-        charset='utf8mb4'
+        SETS.sql['host'], SETS.sql['user'], SETS.sql['pwd'], SETS.sql['db'], charset='utf8mb4'
     )
     try:
         with query.cursor() as cursor:
             cmd = "DROP TABLE IF EXISTS posts"
             cursor.execute(cmd)
             cmd = "CREATE TABLE posts (subid text,title text,"\
-            "link text, author text, subname text, created int(11))"
+                "link text, author text, subname text, created int(11))"
             cursor.execute(cmd)
             query.commit()
     finally:
@@ -51,8 +85,7 @@ def empty():
 
 def populate():
     query = pymysql.connect(
-        sets.sql['host'], sets.sql['user'], sets.sql['pwd'], sets.sql['db'],
-        charset='utf8mb4'
+        SETS.sql['host'], SETS.sql['user'], SETS.sql['pwd'], SETS.sql['db'], charset='utf8mb4'
     )
     try:
         with query.cursor() as cursor:
@@ -63,59 +96,59 @@ def populate():
                 done.append(row[0])
     finally:
         query.close()
-    msg.print_loaded(len(done))
-
+    logger.info("Database successfully loaded. {} post(s) already populated.\n"
+                .format(len(done))
+                )
 
 
 def init_db():
-    clear = input('[-] Clear the database? [y/n]?: ')
+    clear = input('Clear the database? [y/n]?: ')
     if clear in ('Y', 'y'):
-        msg.print_clear()
+        logger.info("Clearing database...")
         try:
             empty()
         except pymysql.OperationalError as err:
-            msg.error_nosql(err)
+            logger.warning(
+                "Database load failed. Running without database - data will not be persistent"
+            )
             return False
     else:
         populate()
-        msg.print_not_clear()
-
-
-
+        logger.info(("Database was not cleared."))
 
 
 def main():
     try:
         reddit = praw.Reddit(
-            client_id=sets.reddit['client_id'], 
-            client_secret=sets.reddit['client_secret'],
-            password=sets.reddit['password'],
-            user_agent=sets.reddit['user_agent'],
-            user_name=sets.reddit['user_name'],
-    )
+            client_id=SETS.reddit['client_id'],
+            client_secret=SETS.reddit['client_secret'],
+            password=SETS.reddit['password'],
+            user_agent=SETS.reddit['user_agent'],
+            user_name=SETS.reddit['user_name'],
+        )
     except praw.exceptions.ClientException as err:
-        print("[x] Login error  - {err}".format(err=err))
+        logger.error("Login error - {}".format(err))
         raise SystemExit
-    msg.print_title()
+    print(dope_title)
     init_db()
     while True:
-        msg.run_msg(strftime("%a, %y-%m-%d %H:%M:%S %Z ", localtime()),
-                        sets.conf['subs'])
-        for submission in reddit.subreddit("+".join(sets.conf['subs'])).new(limit=1000):
+        logger.info("Scanning {} for keyword(s)".format(SETS.conf['subs']))
+        for submission in reddit.subreddit("+".join(SETS.conf['subs'])).new(limit=1000):
             name = str(submission.author)
             subname = str(submission.subreddit_name_prefixed)
             try:
                 has_key = any(
-                    string in submission.title.lower() for string in sets.conf['keywords'])
+                    string in submission.title.lower() for string in SETS.conf['keywords'])
                 if submission not in done and has_key:
-                    addpost(
+                    add_post(
                         submission.id, submission.title, submission.shortlink,
                         str(submission.author), str(submission.subreddit_name_prefixed), submission.created, True)
                 else:
                     pass
-            except Exception as e:
-                msg.error_gen(e)
-        sleep(sets.conf['sleep'])
+            except Exception as err:
+                logger.error("{}".format(err))
+        sleep(SETS.conf['sleep'])
+
 
 if __name__ == '__main__':
     main()
