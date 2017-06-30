@@ -145,7 +145,6 @@ def reddit_login(creds):
 
 
 def main(reddit_creds, sql_creds):
-    print(dope_title)
     reddit = reddit_login(reddit_creds)
     init_db()
     while True:
@@ -164,4 +163,5 @@ def main(reddit_creds, sql_creds):
 
 
 if __name__ == '__main__':
+    print(dope_title)
     main(SETS.reddit, SETS.sql)
