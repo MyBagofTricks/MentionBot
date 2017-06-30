@@ -22,7 +22,7 @@ try:
 except ImportError as err:
     logger.error("Cannot continue - {}".format(err))
     raise SystemExit
-done = []
+DONE = []
 
 dope_title = ('\n' * 80 + '*' * 80 + """
    _____                 __  .__             __________        __
@@ -100,11 +100,11 @@ def populate():
             cursor.execute(cmd)
             result = cursor.fetchall()
             for row in result:
-                done.append(row[0])
+                DONE.append(row[0])
     finally:
         query.close()
     logger.info("Database successfully loaded. {} post(s) already populated.\n"
-                .format(len(done))
+                .format(len(DONE))
                 )
 
 
@@ -122,7 +122,7 @@ def init_db():
         logger.info(("Database was not cleared."))
 
 
-def reddit_login(creds):
+def reddit_login():
     """ Authenticates with reddit via OAuth2
 
     creds(dict) - contains the reddit client_id, client_secret, password, user_agent, user_name
@@ -130,22 +130,20 @@ def reddit_login(creds):
     Return reddit API object"""
     try:
         reddit = praw.Reddit(
-            client_id=creds['client_id'],
-            client_secret=creds['client_secret'],
-            password=creds['password'],
-            user_agent=creds['user_agent'],
-            user_name=creds['user_name'],
+            client_id=SETS.reddit['client_id'],
+            client_secret=SETS.reddit['client_secret'],
+            password=SETS.reddit['password'],
+            user_agent=SETS.reddit['user_agent'],
+            user_name=SETS.reddit['user_name'],
         )
     except praw.exceptions.ClientException as err:
         logger.error("Login error - {}".format(err))
         raise SystemExit
     return reddit
-    
 
 
-
-def main(reddit_creds, sql_creds):
-    reddit = reddit_login(reddit_creds)
+def main():
+    reddit = reddit_login()
     init_db()
     while True:
         logger.info("Scanning {} for keyword(s)".format(SETS.conf['subs']))
@@ -153,7 +151,7 @@ def main(reddit_creds, sql_creds):
             try:
                 has_key = any(
                     string in submission.title.lower() for string in SETS.conf['keywords'])
-                if submission not in done and has_key:
+                if submission not in DONE and has_key:
                     add_post(submission)
                 else:
                     pass
@@ -164,4 +162,4 @@ def main(reddit_creds, sql_creds):
 
 if __name__ == '__main__':
     print(dope_title)
-    main(SETS.reddit, SETS.sql)
+    main()
